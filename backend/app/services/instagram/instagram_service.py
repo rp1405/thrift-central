@@ -4,8 +4,8 @@ from typing import Optional
 from beanie import PydanticObjectId
 from fastapi import HTTPException
 
-from app.models.user import User, InstagramConnection
-from app.repositories.user_repository import UserRepository
+from app.models.store import Store, InstagramConnection
+from app.repositories.store_repository import StoreRepository
 from app.services.instagram.client import instagram_client
 
 
@@ -14,7 +14,7 @@ class InstagramService:
     async def get_oauth_url(self) -> str:
         return instagram_client.get_oauth_url()
 
-    async def handle_oauth_callback(self, code: str, user_id: Optional[str] = None) -> User:
+    async def handle_oauth_callback(self, code: str, store_id: Optional[str] = None) -> Store:
         # Step 1: Exchange auth code for a short-lived token
         token_data = await instagram_client.exchange_code_for_token(code)
         short_lived_token = token_data.get("access_token")
@@ -79,34 +79,34 @@ class InstagramService:
             print(f"FAILED TO GET PAGE ACCOUNTS: {e}")
             raise HTTPException(status_code=400, detail=f"Failed to connect Instagram account: {e}")
 
-        # Step 7: Attach to existing user or create new one
-        if user_id:
-            user = await UserRepository.get_by_id(PydanticObjectId(user_id))
-            if user:
-                user.instagram = connection
-                user.updated_at = datetime.utcnow()
-                return await UserRepository.save(user)
+        # Step 7: Attach to existing store or create new one
+        if store_id:
+            store = await StoreRepository.get_by_id(PydanticObjectId(store_id))
+            if store:
+                store.instagram = connection
+                store.updated_at = datetime.utcnow()
+                return await StoreRepository.save(store)
 
-        existing = await UserRepository.get_by_instagram_id(instagram_id)
+        existing = await StoreRepository.get_by_instagram_id(instagram_id)
         if existing:
             existing.instagram = connection
             existing.updated_at = datetime.utcnow()
-            return await UserRepository.save(existing)
+            return await StoreRepository.save(existing)
 
-        new_user = User(
+        new_store = Store(
             name=instagram_name,
             instagram=connection,
         )
-        return await UserRepository.create(new_user)
+        return await StoreRepository.create(new_store)
 
-    async def send_message(self, user_id: str, recipient_id: str, message_text: str) -> dict:
+    async def send_message(self, store_id: str, recipient_id: str, message_text: str) -> dict:
         """Send a message to an Instagram user from the backend."""
-        user = await UserRepository.get_by_id(PydanticObjectId(user_id))
-        if not user or not user.instagram or not user.instagram.page_access_token:
-            raise HTTPException(status_code=400, detail="User does not have a valid Instagram page connection.")
+        store = await StoreRepository.get_by_id(PydanticObjectId(store_id))
+        if not store or not store.instagram or not store.instagram.page_access_token:
+            raise HTTPException(status_code=400, detail="Store does not have a valid Instagram page connection.")
             
         return await instagram_client.send_message(
-            page_access_token=user.instagram.page_access_token,
+            page_access_token=store.instagram.page_access_token,
             recipient_id=recipient_id,
             message_text=message_text
         )

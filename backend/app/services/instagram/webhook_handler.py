@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from app.repositories.user_repository import UserRepository
+from app.repositories.store_repository import StoreRepository
 from app.schemas.instagram import InstagramWebhookPayload, WebhookMessaging
 from app.services.instagram.client import instagram_client
 
@@ -39,9 +39,9 @@ class WebhookHandler:
         customer_id = sender_id if is_customer_sending else recipient_id
         sender_type = "customer" if is_customer_sending else "business"
 
-        # Find the business owner (User) this webhook is for
-        user = await UserRepository.get_by_instagram_id(business_instagram_id)
-        if not user:
+        # Find the business owner (Store) this webhook is for
+        store = await StoreRepository.get_by_instagram_id(business_instagram_id)
+        if not store:
             logger.warning(f"Webhook received for unknown Instagram account: {business_instagram_id}")
             return
 
@@ -49,10 +49,10 @@ class WebhookHandler:
         logger.info(f"Received message from {sender_type} ({sender_id}): {event.message.text}")
 
         # Echo the message back if it's from the customer
-        if is_customer_sending and event.message.text and user.instagram and user.instagram.page_access_token:
+        if is_customer_sending and event.message.text and store.instagram and store.instagram.page_access_token:
             try:
                 await instagram_client.send_message(
-                    page_access_token=user.instagram.page_access_token,
+                    page_access_token=store.instagram.page_access_token,
                     recipient_id=customer_id,
                     message_text=event.message.text + " - Thrift Central"
                 )

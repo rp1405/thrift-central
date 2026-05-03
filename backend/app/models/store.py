@@ -15,11 +15,13 @@ class InstagramConnection(BaseModel):
     page_access_token: Optional[str] = None
 
 
-class User(Document):
+class Store(Document):
     name: str
     instagram: Optional[InstagramConnection] = None
+    mobileNumber: Optional[str] = None
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
-        name = "users"
+        name = "stores"

@@ -18,10 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/auth", summary="Start Instagram OAuth flow")
-async def instagram_auth(user_id: Optional[str] = Query(default=None)):
+async def instagram_auth(store_id: Optional[str] = Query(default=None)):
     """
     Redirect the business owner to Instagram's OAuth consent screen.
-    Optionally pass ?user_id=<id> to attach the Instagram account to an existing user.
+    Optionally pass ?store_id=<id> to attach the Instagram account to an existing store.
     """
     url = await instagram_service.get_oauth_url()
     # In a real frontend flow this would be a RedirectResponse.
@@ -32,17 +32,17 @@ async def instagram_auth(user_id: Optional[str] = Query(default=None)):
 @router.get("/callback", summary="Handle Instagram OAuth callback")
 async def instagram_callback(
     code: str = Query(...),
-    user_id: Optional[str] = Query(default=None),
+    store_id: Optional[str] = Query(default=None),
 ):
     """
     Instagram redirects here after the user grants permissions.
-    Exchanges the code for tokens and stores them on the User document.
+    Exchanges the code for tokens and stores them on the Store document.
     """
-    user = await instagram_service.handle_oauth_callback(code=code, user_id=user_id)
+    store = await instagram_service.handle_oauth_callback(code=code, store_id=store_id)
     return {
         "message": "Instagram account connected successfully.",
-        "user_id": str(user.id),
-        "instagram_username": user.instagram.instagram_username if user.instagram else None,
+        "store_id": str(store.id),
+        "instagram_username": store.instagram.instagram_username if store.instagram else None,
     }
 
 
@@ -78,18 +78,18 @@ async def receive_webhook(payload: InstagramWebhookPayload, background_tasks: Ba
 
 
 @router.get("/send-message", summary="Send an Instagram message")
-async def send_message(user_id: str, recipient_id: str, message_text: str):
+async def send_message(store_id: str, recipient_id: str, message_text: str):
     """
-    Send a message from the authenticated user's Instagram account.
+    Send a message from the authenticated store's Instagram account.
     """
     try:
-        # basic validation that user_id is objectid
-        PydanticObjectId(user_id)
+        # basic validation that store_id is objectid
+        PydanticObjectId(store_id)
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid user_id format.")
+        raise HTTPException(status_code=400, detail="Invalid store_id format.")
 
     result = await instagram_service.send_message(
-        user_id=user_id,
+        store_id=store_id,
         recipient_id=recipient_id,
         message_text=message_text
     )
