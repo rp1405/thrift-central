@@ -1,3 +1,4 @@
+from app.services.message_orchestrator_service import MessageOrchestratorService
 import logging
 from datetime import datetime
 
@@ -51,12 +52,7 @@ class WebhookHandler:
         # Echo the message back if it's from the customer
         if is_customer_sending and event.message.text and store.instagram and store.instagram.page_access_token:
             try:
-                await instagram_client.send_message(
-                    page_access_token=store.instagram.page_access_token,
-                    recipient_id=customer_id,
-                    message_text=event.message.text + " - Thrift Central"
-                )
-                logger.info(f"Echoed message back to customer {customer_id}")
+                await MessageOrchestratorService.execute_action(store, customer_id, event.message.text)
             except Exception as e:
                 logger.error(f"Failed to echo message: {e}")
 

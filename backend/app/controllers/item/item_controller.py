@@ -16,6 +16,20 @@ async def create_new_item(item_in: ItemCreate):
     """
     return await ItemService.create_item(item_in)
 
+@router.post(
+    "/bulk", 
+    response_model=List[Item],
+    status_code=status.HTTP_201_CREATED,
+    summary="Create multiple items"
+)
+async def create_multiple_items(items_in: List[ItemCreate]):
+    """
+    Uploads a batch of items to the inventory. 
+    Automatically assigns unique, store-specific item codes (e.g., AB-1234) to each item.
+    """
+    created_items = await ItemService.create_items_bulk(items_in)
+    return created_items
+
 
 @router.get("/{item_id}", response_model=Item)
 async def get_item(item_id: PydanticObjectId):
@@ -31,6 +45,14 @@ async def get_store_items(store_id: PydanticObjectId):
     Retrieve all items belonging to a specific store.
     """
     return await ItemService.get_items_by_store(store_id)
+
+
+@router.get("/store/{store_id}/code/{code}", response_model=Item)
+async def get_item_by_store_and_code(store_id: PydanticObjectId, code: str):
+    """
+    Retrieve a specific item using its store ID and unique item code (e.g., AB-1234).
+    """
+    return await ItemService.get_item_by_code(store_id, code)
 
 
 @router.patch("/{item_id}", response_model=Item)

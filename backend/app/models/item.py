@@ -3,6 +3,7 @@ from datetime import datetime
 from beanie import Document, PydanticObjectId
 from pydantic import Field
 from enum import Enum
+from pymongo import IndexModel, ASCENDING # <-- Add this import
 
 class ItemSize(str, Enum):
     S = "S"
@@ -17,6 +18,7 @@ class ItemSize(str, Enum):
 class Item(Document):
     name: str
     price: float
+    code: str
     description: str
     images: list[str]
     store_id: PydanticObjectId
@@ -27,3 +29,7 @@ class Item(Document):
 
     class Settings:
         name = "items"
+        # Create a compound index that enforces uniqueness ONLY within the same store
+        indexes = [
+            IndexModel([("store_id", ASCENDING), ("code", ASCENDING)], unique=True)
+        ]

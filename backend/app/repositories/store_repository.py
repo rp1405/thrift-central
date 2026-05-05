@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 from beanie import PydanticObjectId
@@ -10,6 +11,13 @@ class StoreRepository:
     @staticmethod
     async def get_by_id(store_id: PydanticObjectId) -> Optional[Store]:
         return await Store.get(store_id)
+
+    @staticmethod
+    async def get_by_ids(store_ids: List[PydanticObjectId]) -> List[Store]:
+        """
+        Fetches multiple stores by their IDs.
+        """
+        return await Store.find({"_id": {"$in": store_ids}}).to_list()
 
     @staticmethod
     async def get_by_instagram_id(instagram_user_id: str) -> Optional[Store]:
